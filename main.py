@@ -12,6 +12,9 @@ pygame.display.set_caption("Machine Learning Snake")
 done=False
 clock=pygame.time.Clock()
 
+sampleSize=5
+sampleCycle=0
+
 timer=100
 
 score=0
@@ -21,9 +24,10 @@ genNum=0
 variantNum=0
 
 goalLocations=[]
-for i in range(0, 400):
-    goalLocations.append([random.randint(0, 9), random.randint(0, 9)])
-
+for i in range(0, sampleSize):
+    goalLocations.append([])
+    for j in range(0, 400):
+        goalLocations[i].append([random.randint(0, 9), random.randint(0, 9)])
 
 tiles=[]
 for i in range(0, 10):
@@ -32,9 +36,8 @@ for i in range(0, 10):
         tiles[i].append(0)
 
 def scoreadd():
-    global timer
     global score
-    score+=100-(timer/10)
+    score+=1/sampleSize
 
 def settimer(val):
     global timer
@@ -67,7 +70,7 @@ class Snake:
     def newGoal(self):
         notDone=True
         while notDone:
-            p=goalLocations[len(self.snekTiles)-3+self.skip]
+            p=goalLocations[sampleCycle][len(self.snekTiles)-3+self.skip]
             notDone=False
             for i in self.snekTiles:
                 if (i==p):
@@ -147,27 +150,30 @@ while not done:
     timer-=1
 
     if timer<=0:
-        if score > highScore:
-            highScore = score
-            net.bestVals()
-            genNum += 1
-            variantNum = 0
-            text = open("wb.txt", 'w')
-            text.write(str(net.wb))
-            text.close()
-            print("New Generation")
-        print("Generation:", genNum,"Variant:", variantNum, "High:", round(highScore), "Length:", len(Snek.snekTiles), "Last:", round(score))
-        net.nudge(50)
+        sampleCycle+=1
+        if sampleCycle>=sampleSize:
+            if score > highScore:
+                highScore = score
+                net.bestVals()
+                genNum += 1
+                variantNum = 0
+                text = open("wb.txt", 'w')
+                text.write(str(net.wb))
+                text.close()
+                print("New Generation")
+            print("Generation:", genNum,"Variant:", variantNum, "High:", round(highScore*10)/10, "Last:", round(score*10)/10)
+            net.nudge(50)
+            variantNum+=1
+            score=0
+            sampleCycle=0
         Snek.clearSnake()
         Snek.__init__()
-        variantNum += 1
         timer=50
         for i in range(0, 10):
             for j in range(0, 10):
-                tiles[i][j] = 0
+                tiles[i][j]=0
         Snek.newGoal()
         Snek.skip=0
-        score=0
 
     for i in range(0, 10):
         for j in range(0, 10):
